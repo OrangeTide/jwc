@@ -2,19 +2,20 @@ program <- { ctx->line = 1; } globdef+ !. { printf("%d:program\n", ctx->line); }
 globdef <- ident '=' ws rhs { printf("%d:globdef\n", ctx->line); }
 type <- '(' ws type_list '->' ws type ')' ws
 	/ '[' ws type ']' ws
-	/ 'w' ws
-type_list <- type ',' ws type_list
-	/ type
+	/ 'w' ws			{ printf("%d:type='w'\n", ctx->line); }
+type_list <- type ',' ws type_list	{ printf("%d:typelist\n", ctx->line); }
+	/ type				{ printf("%d:type\n", ctx->line); }
 func <- 'func' ws param_list '[' ws expr_list ']' ws { printf("%d:func\n", ctx->line); }
-param_list <- param param_list
-	/ param
+param_list <- param param_list		{ printf("%d:param_list\n", ctx->line); }
+	/ param				{ printf("%d:param\n", ctx->line); }
 param <- ident ':' ws type
 expr_list <- expr ',' ws expr_list
 	/ expr
 expr <- ident '=' ws rhs
 	/ arrval '=' ws rhs
 	/ rhs
-rhs <- sum
+rhs <- sum / rhs0
+rhs0 <- num
 	/ func
 	/ 'if' ws rhs 'then' ws expr 'else' ws expr
 	/ arrval
@@ -23,7 +24,7 @@ rhs <- sum
 	/ ident
 sum <- product ( < ('+' / '-') > ws { printf("%d:expr op='%s'\n", ctx->line, yytext); } product )*
 product <- value ( < ('*' / '/' / '%') > ws { printf("%d:expr op='%s'\n", ctx->line, yytext); } value )*
-value <- num / '(' ws rhs ')' ws
+value <- rhs0 / '(' ws rhs ')' ws
 arrval <- ident '[' ws rhs ']' ws
 num_list <- num ',' ws num_list
 	/ num
