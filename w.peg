@@ -1,0 +1,41 @@
+program <- { ctx->line = 1; } globdef+ !. { printf("%d:program\n", ctx->line); }
+globdef <- ident '=' ws rhs { printf("%d:globdef\n", ctx->line); }
+type <- '(' ws type_list '->' ws type ')' ws
+	/ '[' ws type ']' ws
+	/ 'w' ws
+type_list <- type ',' ws type_list
+	/ type
+func <- 'func' ws param_list '[' ws expr_list ']' ws { printf("%d:func\n", ctx->line); }
+param_list <- param param_list
+	/ param
+param <- ident ':' ws type
+expr_list <- expr ',' ws expr_list
+	/ expr
+expr <- ident '=' ws rhs
+	/ arrval '=' ws rhs
+	/ rhs
+rhs <- sum
+	/ func
+	/ 'if' ws rhs 'then' ws expr 'else' ws expr
+	/ arrval
+	/ '[' ws num_list? ']' ws
+	/ ident rhs_list
+	/ ident
+sum <- product ( < ('+' / '-') > ws { printf("%d:expr op='%s'\n", ctx->line, yytext); } product )*
+product <- value ( < ('*' / '/' / '%') > ws { printf("%d:expr op='%s'\n", ctx->line, yytext); } value )*
+value <- num / '(' ws rhs ')' ws
+arrval <- ident '[' ws rhs ']' ws
+num_list <- num ',' ws num_list
+	/ num
+rhs_list <- rhs rhs_list
+	/ rhs
+num <- hexnum
+	/ binnum
+	/ decnum
+ident <- < [_a-zA-Z][_a-zA-Z0-9]* > ws	{ printf("%d:ident='%s'\n", ctx->line, yytext); }
+decnum <- < [0-9]+ > ws			{ printf("%d:decnum='%s'\n", ctx->line, yytext); }
+hexnum <- '0x' < [0-9]+ > ws		{ printf("%d:hexnum='%s'\n", ctx->line, yytext); }
+binnum <- '0b' < [0-1]+ > ws		{ printf("%d:bignum='%s'\n", ctx->line, yytext); }
+ws <- ( [ \t\v\r]
+	/ [\n]				{ ctx->line++; }
+	)*
