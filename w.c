@@ -14,6 +14,7 @@ int w_parse(void)
 	int res;
 
 	memset(&ctx, 0, sizeof(ctx));
+	ctx.line = 1;
 	res = yyparse(&ctx);
 	return res;
 }

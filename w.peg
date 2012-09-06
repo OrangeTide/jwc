@@ -1,4 +1,4 @@
-program <- { ctx->line = 1; } globdef+ !. { printf("%d:program\n", ctx->line); }
+program <- ws globdef+ !. { printf("%d:program\n", ctx->line); }
 globdef <- ident '=' ws rhs { printf("%d:globdef\n", ctx->line); }
 type <- '(' ws type_list '->' ws type ')' ws
 	/ '[' ws type ']' ws
@@ -22,8 +22,8 @@ rhs0 <- num
 	/ '[' ws num_list? ']' ws
 	/ ident rhs_list
 	/ ident
-sum <- product ( < ('+' / '-') > ws { printf("%d:expr op='%s'\n", ctx->line, yytext); } product )*
-product <- value ( < ('*' / '/' / '%') > ws { printf("%d:expr op='%s'\n", ctx->line, yytext); } value )*
+sum <- product ( < ('+' / '-') > { printf("%d:expr op='%s'\n", ctx->line, yytext); } ws product )*
+product <- value ( < ('*' / '/' / '%') > { printf("%d:expr op='%s'\n", ctx->line, yytext); } ws value )*
 value <- rhs0 / '(' ws rhs ')' ws
 arrval <- ident '[' ws rhs ']' ws
 num_list <- num ',' ws num_list
@@ -33,10 +33,10 @@ rhs_list <- rhs rhs_list
 num <- hexnum
 	/ binnum
 	/ decnum
-ident <- < [_a-zA-Z][_a-zA-Z0-9]* > ws	{ printf("%d:ident='%s'\n", ctx->line, yytext); }
-decnum <- < [0-9]+ > ws			{ printf("%d:decnum='%s'\n", ctx->line, yytext); }
-hexnum <- '0x' < [0-9]+ > ws		{ printf("%d:hexnum='%s'\n", ctx->line, yytext); }
-binnum <- '0b' < [0-1]+ > ws		{ printf("%d:bignum='%s'\n", ctx->line, yytext); }
-ws <- ( [ \t\v\r]
-	/ [\n]				{ ctx->line++; }
-	)*
+ident <- < [_a-zA-Z][_a-zA-Z0-9]* > { printf("%d:ident='%s'\n", ctx->line, yytext); } ws
+decnum <- < [0-9]+ > { printf("%d:decnum='%s'\n", ctx->line, yytext); } ws
+hexnum <- '0x' < [0-9]+ > { printf("%d:hexnum='%s'\n", ctx->line, yytext); } ws
+binnum <- '0b' < [0-1]+ > { printf("%d:bignum='%s'\n", ctx->line, yytext); } ws
+comment <- '{' < [^}]* > '}'		{ printf("%d:comment='%s'\n", ctx->line, yytext); }
+ws <- ( [ \t\v\r] / newline / comment )*
+newline <- [\n]				{ ctx->line++; }
