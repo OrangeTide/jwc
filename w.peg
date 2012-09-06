@@ -3,40 +3,38 @@ globdef <- ident '=' ws rhs { printf("%d:globdef\n", ctx->line); }
 type <- '(' ws type_list '->' ws type ')' ws
 	/ '[' ws type ']' ws
 	/ 'w' ws			{ printf("%d:type='w'\n", ctx->line); }
-type_list <- type ',' ws type_list	{ printf("%d:typelist\n", ctx->line); }
+type_list <- type comma type_list	{ printf("%d:typelist\n", ctx->line); }
 	/ type				{ printf("%d:type\n", ctx->line); }
 func <- 'func' ws param_list '[' ws expr_list ']' ws { printf("%d:func\n", ctx->line); }
 param_list <- param param_list		{ printf("%d:param_list\n", ctx->line); }
 	/ param				{ printf("%d:param\n", ctx->line); }
 param <- ident ':' ws type
-expr_list <- expr ',' ws expr_list
+expr_list <- expr comma expr_list
+	/ arrval '=' ws rhs
 	/ expr
 expr <- ident '=' ws rhs
-	/ arrval '=' ws rhs
 	/ rhs
-rhs <- sum / rhs0
-rhs0 <- num
+rhs <- sum / value / '(' ws rhs ')' ws
+sum <- product ( < ('+' / '-') > { printf("%d:expr op='%s'\n", ctx->line, yytext); } ws product )*
+product <- value ( < ('*' / '/' / '%') > { printf("%d:expr op='%s'\n", ctx->line, yytext); } ws value )*
+value <- num
 	/ func
 	/ 'if' ws rhs 'then' ws expr 'else' ws expr
 	/ arrval
-	/ '[' ws num_list? ']' ws
-	/ ident rhs_list
+	/ '[' ws value_list? ']' ws
+	/ ident '(' ws rhs_list ')' ws
 	/ ident
-sum <- product ( < ('+' / '-') > { printf("%d:expr op='%s'\n", ctx->line, yytext); } ws product )*
-product <- value ( < ('*' / '/' / '%') > { printf("%d:expr op='%s'\n", ctx->line, yytext); } ws value )*
-value <- rhs0 / '(' ws rhs ')' ws
 arrval <- ident '[' ws rhs ']' ws
-num_list <- num ',' ws num_list
-	/ num
-rhs_list <- rhs rhs_list
-	/ rhs
+value_list <- value comma value_list / value
+rhs_list <- rhs comma rhs_list / rhs
 num <- hexnum
 	/ binnum
 	/ decnum
 ident <- < [_a-zA-Z][_a-zA-Z0-9]* > { printf("%d:ident='%s'\n", ctx->line, yytext); } ws
-decnum <- < [0-9]+ > { printf("%d:decnum='%s'\n", ctx->line, yytext); } ws
+decnum <- < '-'? [0-9]+ > { printf("%d:decnum='%s'\n", ctx->line, yytext); } ws
 hexnum <- '0x' < [0-9]+ > { printf("%d:hexnum='%s'\n", ctx->line, yytext); } ws
 binnum <- '0b' < [0-1]+ > { printf("%d:bignum='%s'\n", ctx->line, yytext); } ws
+comma <- ',' ws
 comment <- '{' < [^}]* > '}'		{ printf("%d:comment='%s'\n", ctx->line, yytext); }
 ws <- ( [ \t\v\r] / newline / comment )*
 newline <- [\n]				{ ctx->line++; }
